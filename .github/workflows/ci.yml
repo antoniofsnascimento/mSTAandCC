@@ -1,2 +1,50 @@
+# Github Actions CI
+
+name: Continuous Integration
+
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
+  build-and-test-linux:
+    name: Linux CI (${{ matrix.compiler }} - C++20)
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ gcc, clang ]
+
+    steps:
+      - name: Checkout repository source code
+        uses: actions/checkout@v4
+
+      - name: Install build toolchain and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build build-essential clang lld
+
+      - name: Configure CMake with Sanitizers enabled
+        run: | # Set compiler environment variables according to the current matrix item
+          if [ "${{ matrix.compiler }}" = "gcc" ]; then 
+            export CC=gcc
+            export CXX=g++
+          else
+            export CC=clang
+            export CXX=clang++
+          fi
+          
+          $CXX --version
+          
+          cmake -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENABLE_SANITIZERS=ON
+
+      - name: Compile library and test targets
+        run: cmake --build build --parallel
+
+      - name: Run test suite via CTest
+        run: ctest --test-dir build --output-on-failure
