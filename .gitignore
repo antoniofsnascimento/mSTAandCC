@@ -1,0 +1,11 @@
+# Build artifacts
+cmake-build-*/
+build/
+bin/
+lib/
+compile_commands.json
+
+# IDE and OS metadata
+.idea/
+.DS_Store
+*.dSYM/
